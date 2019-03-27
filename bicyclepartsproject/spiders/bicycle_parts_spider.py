@@ -33,20 +33,17 @@ class BicyclePartsSpider(scrapy.Spider):
         store = list()
         # Събиране на наличните характеристики
         for row in response.css('div.product-classifications table.table tbody tr'):
-            characteristics[str(row.xpath('td[1]//text()').get()).strip()] = str(
-                row.xpath('td[2]//text()').get()).strip()
+            characteristics[str(row.xpath('td[1]//text()').get()).strip()] = str(row.xpath('td[2]//text()').get()).strip()
 
-        characteristics_get = response.css('section.product-details div#stock div.store-navigation ul li')
-        if characteristics:
-            # Събиране на данни за наличности
-            for row in characteristics_get:
-                quantity = row.css('span.store-availability span.available::text').get()
-                store.append({
-                    'store': str(row.css('span.pickup-store-list-entry-name::text').get()).strip(),
-                    'address': str(row.css('span.pickup-store-list-entry-address::text').get()).strip(),
-                    'city': str(row.css('span.pickup-store-list-entry-city::text').get()).strip(),
-                    'available': int(re.search(r"\d+", quantity if quantity else '0').group())
-                })
+        # Събиране на данни за наличности
+        for row in response.css('section.product-details div#stock div.store-navigation ul.pickup-store-list li.pickup-store-list-entry'):
+            quantity = row.css('span.store-availability span.available::text').get()
+            store.append({
+                'store': str(row.css('span.pickup-store-list-entry-name::text').get()).strip(),
+                'address': str(row.css('span.pickup-store-list-entry-address::text').get()).strip(),
+                'city': str(row.css('span.pickup-store-list-entry-city::text').get()).strip(),
+                'available': int(re.search(r"\d+", quantity if quantity else '0').group())
+            })
 
         yield {
             'title': str(response.css('section.product-single h1::text').get()).strip(),
