@@ -6,14 +6,16 @@ import re
 class BicyclePartsSpider(scrapy.Spider):
     name = 'test'
 
-    start_urls = ['https://mr-bricolage.bg/bg/Instrumenti/Avto-i-veloaksesoari/Veloaksesoari/UNIVERSALNO-ZhILO-ZA-SKOROSTI-FISHER/p/986371', ]
+    start_urls = ['https://mr-bricolage.bg/', ]
 
     def parse(self, response):
-        for row in response.css('section.product-details div#stock div.store-navigation ul li'):
-            quantity = row.css('span.store-availability span.available::text').get()
+        page_auto_and_bicycles = response.xpath('//a[@title="Авто и велоаксесоари"]/@href').get()
+        if page_auto_and_bicycles is not None:
+            yield response.follow(page_auto_and_bicycles, self.parse_auto_and_bicycles_page)
+
+    def parse_auto_and_bicycles_page(self, response):
+        page_bicycles = response.xpath('//img[@title="Велоаксесоари"]/../@href').get()
+        if page_bicycles is not None:
             yield {
-                'store': str(row.css('span.pickup-store-list-entry-name::text').get()).strip(),
-                'address': str(row.css('span.pickup-store-list-entry-address::text').get()).strip(),
-                'city': str(row.css('span.pickup-store-list-entry-city::text').get()).strip(),
-                'available': int(re.search(r"\d+", quantity if quantity else '0').group())
+                'page': page_bicycles
             }
