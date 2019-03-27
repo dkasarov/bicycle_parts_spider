@@ -1,17 +1,19 @@
 import scrapy
+import re
 
 
+# Тестване на отделни модули от bicycle_parts_spider
 class BicyclePartsSpider(scrapy.Spider):
     name = 'test'
 
-    start_urls = ['https://mr-bricolage.bg/bg/Каталог/Инструменти/Авто-и-велоаксесоари/Велоаксесоари/c/006008012', ]
+    start_urls = ['https://mr-bricolage.bg/bg/Instrumenti/Avto-i-veloaksesoari/Veloaksesoari/UNIVERSALNO-ZhILO-ZA-SKOROSTI-FISHER/p/986371', ]
 
     def parse(self, response):
-        for prod in response.css('div.product'):
+        for row in response.css('section.product-details div#stock div.store-navigation ul li'):
+            quantity = row.css('span.store-availability span.available::text').get()
             yield {
-                'product': str(prod.css('div.title a.name::text').get()).replace('\n\t\t\t\t\t', ''),
+                'store': str(row.css('span.pickup-store-list-entry-name::text').get()).strip(),
+                'address': str(row.css('span.pickup-store-list-entry-address::text').get()).strip(),
+                'city': str(row.css('span.pickup-store-list-entry-city::text').get()).strip(),
+                'available': int(re.search(r"\d+", quantity if quantity else '0').group())
             }
-
-        next_page = response.css('li.pagination-next a.fa-chevron-right::attr(href)').get()
-        if next_page is not None:
-            yield response.follow(next_page, callback=self.parse)
